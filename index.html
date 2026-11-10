@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Rich Simpla Webbradio</title>
+  <title>Rich Simpla Webbradio Spelare</title>
   <style>
     :root {
       --bg-color: #0f172a;
@@ -61,6 +61,50 @@
       width: 100%;
       height: 40px;
       outline: none;
+    }
+
+    .volume-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 16px;
+      padding: 0 8px;
+    }
+
+    .volume-icon {
+      font-size: 1.2rem;
+      user-select: none;
+    }
+
+    input[type="range"] {
+      flex: 1;
+      height: 6px;
+      -webkit-appearance: none;
+      background: #334155;
+      border-radius: 3px;
+      outline: none;
+      cursor: pointer;
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: var(--accent);
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+
+    input[type="range"]::-webkit-slider-thumb:hover {
+      background: var(--accent-hover);
+    }
+
+    .volume-value {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      min-width: 38px;
+      text-align: right;
     }
 
     .section-title {
@@ -144,6 +188,12 @@
   <div class="player-box">
     <div id="current-channel-display" class="current-title">Välj en kanal</div>
     <audio id="audio-player" controls autoplay preload="none"></audio>
+    
+    <div class="volume-container">
+      <span class="volume-icon">🔊</span>
+      <input type="range" id="volume-slider" min="0" max="1" step="0.01" value="0.8">
+      <span id="volume-text" class="volume-value">80%</span>
+    </div>
   </div>
 
   <div class="section-title">Kanaler</div>
@@ -165,24 +215,44 @@
 <script>
   const audioPlayer = document.getElementById('audio-player');
   const display = document.getElementById('current-channel-display');
+  const volumeSlider = document.getElementById('volume-slider');
+  const volumeText = document.getElementById('volume-text');
+
+  const savedVolume = localStorage.getItem('radioVolume');
+  if (savedVolume !== null) {
+    audioPlayer.volume = parseFloat(savedVolume);
+    volumeSlider.value = savedVolume;
+    volumeText.textContent = Math.round(savedVolume * 100) + '%';
+  } else {
+    audioPlayer.volume = 0.8;
+  }
+
+  volumeSlider.addEventListener('input', function(e) {
+    const val = e.target.value;
+    audioPlayer.volume = val;
+    volumeText.textContent = Math.round(val * 100) + '%';
+    localStorage.setItem('radioVolume', val);
+  });
 
   function playChannel(name, url, btnElement) {
-    // Uppdatera audio-källa
     audioPlayer.src = url;
     audioPlayer.play();
     
-    // Uppdatera text
     display.textContent = 'Spelar: ' + name;
 
-    // Hantera aktiv knapp-markering
-    document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+    const allButtons = document.querySelectorAll('.btn');
+    allButtons.forEach(function(b) {
+      b.classList.remove('active');
+    });
+    
     if (btnElement) {
       btnElement.classList.add('active');
     }
   }
 
   function playCustomUrl() {
-    const customUrl = document.getElementById('custom-url').value.trim();
+    const customUrlInput = document.getElementById('custom-url');
+    const customUrl = customUrlInput.value.trim();
     if (customUrl) {
       playChannel('Egen stream', customUrl, null);
     } else {
